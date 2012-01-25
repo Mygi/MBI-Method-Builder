@@ -1,0 +1,170 @@
+<project name="DaRIS" default="deploy-fornix" basedir=".">
+
+	<!--Read properties from file-->
+	<property file="build.properties" />
+
+	<!--Set default locations-->
+	<property name="src" location="./src" />
+	<property name="pkg" location="./pkg" />
+	<property name="lib" location="./lib" />
+	<property name="build" location="${build.base}/${app.name}" />
+	<property name="dist" location="${dist.base}/${app.name}" />
+	<property name="pkg.file" value="mfpkg-${app.name}-${app.version}-mf${mf.server.version}.zip" />
+	
+	<path id="project.class.path">
+		<pathelement location="${lib}/gwt-user.jar" />
+		<pathelement location="${lib}/gwt-dev.jar" />
+		<pathelement location="${lib}/gwt-servlet.jar" />
+		<pathelement location="${lib}/gwt-servlet-deps.jar" />
+		<pathelement location="${lib}/validation-api-1.0.0.GA.jar" />
+		<pathelement location="${lib}/validation-api-1.0.0.GA-sources.jar" />
+		<pathelement location="${lib}/mfclientgwt.jar" />
+		<pathelement location="${lib}/mfclientguigwt.jar" />
+		<pathelement location="${lib}/adesktopplugingwt.jar" />
+		<pathelement location="${build}" />
+	</path>
+
+	<macrodef name="mfcommand">
+		<attribute name="command" />
+		<attribute name="host" />
+		<attribute name="port" />
+		<attribute name="transport" />
+		<attribute name="domain" />
+		<attribute name="user" />
+		<attribute name="password" />
+		<sequential>
+			<!--
+			<input message="Please type the password for ${mf.auth.domain}:${mf.auth.user}:" addproperty="mf.auth.password" />
+			-->
+			<java classname="arc.mf.command.Execute" fork="true" failonerror="false" maxmemory="128m" outputproperty="mf.sid" resultproperty="mf.exit.code">
+				<jvmarg value="-Djava.net.preferIPv4Stack=true" />
+				<jvmarg value="-Dmf.host=@{host}" />
+				<jvmarg value="-Dmf.port=@{port}" />
+				<jvmarg value="-Dmf.transport=@{transport}" />
+				<arg line="logon @{domain} @{user} @{password}" />
+				<classpath>
+					<pathelement location="${lib}/aterm.jar" />
+				</classpath>
+			</java>
+			<fail message="Failed to log on to Mediaflux server. ExitCode=${mf.exit.code}">
+				<condition>
+					<not>
+						<equals arg1="${mf.exit.code}" arg2="0" />
+					</not>
+				</condition>
+			</fail>
+			<java classname="arc.mf.command.Execute" fork="true" failonerror="true" maxmemory="128m">
+				<jvmarg value="-Djava.net.preferIPv4Stack=true" />
+				<jvmarg value="-Dmf.host=@{host}" />
+				<jvmarg value="-Dmf.port=@{port}" />
+				<jvmarg value="-Dmf.transport=@{transport}" />
+				<jvmarg value="-Dmf.sid=${mf.sid}" />
+				<arg line="@{command}" />
+				<classpath>
+					<pathelement location="${lib}/aterm.jar" />
+				</classpath>
+			</java>
+			<java classname="arc.mf.command.Execute" fork="true" failonerror="true" maxmemory="128m">
+				<jvmarg value="-Djava.net.preferIPv4Stack=true" />
+				<jvmarg value="-Dmf.host=@{host}" />
+				<jvmarg value="-Dmf.port=@{port}" />
+				<jvmarg value="-Dmf.transport=@{transport}" />
+				<jvmarg value="-Dmf.sid=${mf.sid}" />
+				<arg line="logoff" />
+				<classpath>
+					<pathelement location="${lib}/aterm.jar" />
+				</classpath>
+			</java>
+		</sequential>
+	</macrodef>
+
+	<target name="clean" description="clean up everything.">
+		<delete dir="${build}" failonerror="false" />
+		<delete dir="${dist}" failonerror="false" />
+		<delete dir="war/WEB-INF/classes" failonerror="false" />
+		<delete dir="war/daris" failonerror="false" />
+		<mkdir dir="${build}" />
+		<mkdir dir="${dist}" />
+		<mkdir dir="war/WEB-INF/classes" />
+		<mkdir dir="war/daris" />
+	</target>
+
+	<target name="javac" depends="clean" description="compile the java source.">
+		<replace file="${src}/daris/client/Version.java" token="@version@" value="${app.version}" />
+		<javac srcdir="${src}" includes="**" encoding="utf-8" destdir="war/WEB-INF/classes" source="1.5" target="1.5" nowarn="true" debug="true" debuglevel="lines,vars,source">
+			<classpath refid="project.class.path" />
+		</javac>
+		<copy todir="war/WEB-INF/classes">
+			<fileset dir="src" excludes="**/*.java" />
+		</copy>
+	</target>
+
+	<target name="gwtc" depends="javac" description="GWT compile to Javascript">
+		<java failonerror="true" fork="true" classname="com.google.gwt.dev.Compiler">
+			<classpath>
+				<pathelement location="${src}" />
+				<path refid="project.class.path" />
+			</classpath>
+			<!-- add jvmarg -Xss16M or similar if you see a StackOverflowError -->
+			<jvmarg value="-Xmx512M" />
+			<!-- Additional arguments like -style PRETTY or -logLevel DEBUG -->
+			<arg line="${gwt.args}" />
+			<arg value="daris.DaRIS" />
+		</java>
+		<replace file="${src}/daris/client/Version.java" token="${app.version}" value="@version@" />
+	</target>
+
+	<target name="devmode" depends="javac" description="Run development mode">
+		<java failonerror="true" fork="true" classname="com.google.gwt.dev.DevMode">
+			<classpath>
+				<pathelement location="${src}" />
+				<path refid="project.class.path" />
+			</classpath>
+			<jvmarg value="-Xmx256M" />
+			<arg value="-noserver" />
+			<arg value="-startupUrl" />
+			<arg value="${mf.transport}://${mf.host}:${mf.port}/daris/DaRIS.html" />
+			<!-- Additional arguments like -style PRETTY or -logLevel DEBUG -->
+			<arg line="${gwt.args}" />
+			<arg value="daris.Daris" />
+		</java>
+	</target>
+
+	<target name="package" depends="gwtc" description="build Mediaflux package.">
+		<!-- zip the www contents to www.zip -->
+		<zip basedir="war" includes="**/*" excludes="**/WEB-INF/**" destfile="${build}/www.zip" />
+		<!-- prepare the MFLUX package contents -->
+		<delete file="${build}/__manifest.xml" />
+		<tstamp>
+			<format property="build_time" pattern="dd-MMM-yyyy kk:mm:ss z" />
+		</tstamp>
+		<copy file="${pkg}/__manifest.xml" tofile="${build}/__manifest.xml" />
+		<replace file="${build}/__manifest.xml" token="@version@" value="${app.version}" />
+		<replace file="${build}/__manifest.xml" token="@build-time@" value="${build_time}" />
+		<copy file="${pkg}/requireServerVersion.tcl" tofile="${build}/requireServerVersion.tcl" overwrite="true" />
+		<replace file="${build}/requireServerVersion.tcl" token="@requiredVersion@" value="${mf.server.version}"/>
+		<!-- zip the MFLUX package -->
+		<zip filesonly="true" destfile="${dist}/${pkg.file}">
+			<fileset file="${build}/www.zip" />
+			<fileset file="${pkg}/__install.tcl" />
+			<fileset file="${pkg}/__uninstall.tcl" />
+			<fileset file="${build}/requireServerVersion.tcl" />
+			<fileset file="${build}/__manifest.xml" />
+		</zip>
+		<delete file="${build}/__manifest.xml" />
+		<delete file="${build}/www.zip" />
+	</target>
+
+	<target name="deploy-fornix" depends="package" description="install the mediaflux package.">
+		<mfcommand host="${fornix.host}" port="${fornix.port}" transport="${fornix.transport}" domain="${fornix.domain}" user="${fornix.user}" password="${fornix.password}" command="package.install :in file:${dist}/${pkg.file}" />
+	</target>
+
+	<target name="deploy-soma" depends="package" description="install the mediaflux package.">
+		<mfcommand host="${soma.host}" port="${soma.port}" transport="${soma.transport}" domain="${soma.domain}" user="${soma.user}" password="${soma.password}" command="package.install :in file:${dist}/${pkg.file}" />
+	</target>
+
+	<target name="deploy-localhost" depends="package" description="install the mediaflux package.">
+		<mfcommand host="${localhost.host}" port="${localhost.port}" transport="${localhost.transport}" domain="${localhost.domain}" user="${localhost.user}" password="${localhost.password}" command="package.install :in file:${dist}/${pkg.file}" />
+	</target>
+
+</project>
