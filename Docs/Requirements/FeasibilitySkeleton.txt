@@ -1,0 +1,62 @@
+Feasibility Document Skeleton
+
+1. Executive Summary
+1.1 Report in Brief
+1.2 Suggested Reading and Document Scope
+1.3 Conclusions regarding the Comparisons of systems
+1.3.1 Systems Comparison Matrix
+1.4 Conclusions on Quality outcomes between considered approaches
+1.5 Final Conclusions and Recommendations
+
+2. Background
+2.1 Monash Biomedical Imaging
+2.2 DARIS
+2.3 XNAT
+2.4 TARDIS
+
+3. Proposed System
+3.1 Project Scope
+3.2 Aims and Objectives
+3.3 Project Outputs
+3.4 Project Outcomes
+3.5 Project COnstraints
+3.5.1 Work Packages and Timelines
+2.5.2 Resources
+3.5.3 Breakdown of Risk against Development Time
+
+4. Review of Software Systems - Process and Practice
+4.1 Software Lifecycle and Development Methodology
+4.2 Documentation
+4.3 Support
+4.4 Maintenance and Ongoing Costs
+4.5 Development Team
+4.6 Quality Assurance
+4.7 Communication and Management
+4.8 Standards Adherence
+4.9 System Feasibility - Process and Practice
+4.9.1 Ease of hiring new technical staff
+4.9.2 Ease of Sharing software
+4.9.3 Procedural Risks Compared
+4.9.4 Comparison of ongoing costs
+4.9.5 Comparison of development costs
+4.9.6 Comparison of quality assurance cost per solution
+4.9.7 Comnparison of Net Benefits per solution
+4.9.8 Vendor Viability
+
+5. Review of Software Systems - Technical
+5.1 Development Stack
+5.2 Softwarte Architecture
+5.3 Object Model
+5.4 User Interface
+5.5 Test Case Integration
+5.6 Build Cycle
+5.7 Existing Features and Dependencies 
+5.8 Technical Feasibility
+5.8.1 Ease of Learning - Developers
+5.8.2 Ease of Development
+5.8.3 Ease of Integration
+5.8.4 Ease of Deployment
+5.8.5 Ease of Support and Maintenance
+5.8.6 Scalability
+5.8.7 Interoperability
+5.8.8 Operational Characteristics

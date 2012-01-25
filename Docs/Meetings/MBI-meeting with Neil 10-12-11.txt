@@ -1,0 +1,11 @@
+Stencil Pallete + SPACE WITH IMAGE
+
+Method - signal through Steps 
+
+Synchronous steps 
+N-Branch 
+Must 
+
+All Steps must have a precedent
+Methods cannot implement methods (non-recursive)
+Create another semantic concept for grouped steps

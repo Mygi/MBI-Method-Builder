@@ -1,0 +1,208 @@
+Paul Bollington - Head of EResearch Monash
+  - Project Sponsor
+  - Keep Happy
+
+Monash Biomedical Engineering and Medical Imaging
+- ALL IMAGING
+- ANIMALS/PEOPLE
+
+NeuroScience 
+
+Gary Egan - Professor formerly from Monash. More Medical - scientist
+       - David Barnfetter - more technical - reports to Gary Egan
+
+DARIS - working with NEil. 
+Porting DARIS to Monash
+- Data Access Portal to neuroimaging images
+- Extend to track information on experimental process - somehow?
+	- Condition - not tracking everyone
+
+Neurology/Imaging - RADIOLOGY
+
+Extending DARIS in multiple directions
+
+Monash Caulfield - Image processing - Scripts for Computer Vision (Kepler)
+  - Requires a cluster to process
+  - Mildly involved
+
+nnf
+
+Workflows - Processing of imaging
+Method - everything done in an experiment before an image is done (APPROACH)
+
+XNAT
+
+A tool which enables researchers to create new kinds of methods
+ - A method development language ~ XML
+ - + GUI with MediaFlux GWC to fit into DARIS portal
+
+
+David Barnes/Gare Egan = Vague in a good way :: results driven
+
+Neil Tilly (Parkville based) - DARS driven
+
+Digital Asset Management system - distributed
+
+
+JAVA driven development
+
+
+Mediaflux is backend - is it ORM ..... XML database accessed by Java classes
+DAta Access layer - 
+
+MVC concept with layered data and model.....
+
+NIGTK = NeuroImaging Toolkit
+
+DICOM protocol
+DARS is the Portal
+Mediaflux is the framework
+GWT is the interface
+JAVA is the basic language
+NeuroImaging files as Binary Blobs following protocol DICOM....
+
+Jason Laurie is arcitecta (A good programmer) 
+
+HOW to change a workflow mid-process
+
+Method =~ clinical protocol
+Workflow is anterior to method...
+
+Unique id across any mediaflux server. uid (like an exact post-code)
+
+Mediaflux commandline tutorial - of itself translates commands back and forth....can talk to stored procedures
+
+Wilson - built DARIS and supports
+
+sbennett
+
+Mediaflux Desktop - web look into MediaFlux
+
+Kepler workflows
+
+
+
+
+
+
+MBI - Monash Biomedical Engineering
+
+
+Agenda for WILSON 2pm (developer for DARIS for Melbourne)- 
+
+1. Questions about framework
+2. GWT integration
+3. Functional Requirements - STRICT
+4. ~~ MediaFlux interaction with DARIS
+5. Need to speak with Neil
+6. What to salvage 
+7. As quick as posisble for phase 1
+8. More Creative in  Phase 2..
+9. Are we just filling a gap?
+10. Changes to the DATA layer
+11. Formal Definition of a Method - constraint based
+12. Rich Interace Architecture
+
+The Long tail vs the fourth Paradigm
+\
+
+
+MOST IMPORTANT
+
+1. Agree to modelling languages for
+- Data structures
+- Object Models
+- Software Components
+
+Stakeholders
+Users and user Types
+Use Cases
+Domains/Subdomains
+Organisations
+
+
+Function Points
+
+ -  GWT/JQuery set of widgets to string together methods 
+ -  Method Types
+ - Synchronicity
+ - Conditionals
+ - service request
+
+ - Method Search
+
+
+MediaFlux Services – stored procedures – connecting  to DARIS
+
+Put mouth to sleep/ wake mouse up. 
+Workflow…
+Method is a series of steps.  High-level. Method Builder supports computational steps.
+IP Boundaries and linkage grants with plugin capability 
+-	Plugin – generic
+-	Computational steps as plugin.
+-	Audit Trail – no longer necessary
+-	Workflow => Method…Metadata
+-	Sequence graph for steps
+-	Does XMethod have synchronicity
+o	Multiple xmethods on 1 
+-	Rules behind method exstensibility
+-	GUI – has rules enshrined in methods
+-	How to model rules? Predicates as rules (z) 
+-	Method is global – could be consumed by any project
+-	Can rules apply between subject and method
+-	Categorize methods 
+-	Adding keywords 
+-	Open source methods
+-	No permission to say which projects use a specific method
+-	Federated methods
+-	Policy in federation 
+-	Federation on 2 serves with CSIRO/Monash
+-	Distributed queries across federations – handles cycles
+-	Sharing methods - when? GUID
+-	Creates a group of Doctypes -  DocType Builder
+-	SubjectCreator can only use registered methods (Not required)
+-	Ownership of membership
+-	Extension outside project
+-	Method Creation/Method Search/ Management
+-	Replace XMethod if needed….
+-	Exception Handling – step is done or not done
+-	Quality control of data – capabilities More likely on the data…
+-	StateChart/Graph as model of steps in a model
+-	GWT Client library for MediaFLux
+-	DARIS services can be called by GWT Client	
+
+CREATE/REVISE/Sanitized REMOVE/
+Service Oriented Architecture – for Model
+View = GWT
+DataMode = MFServer
+SingleController = DARIS
+
+-	Add Method
+-	Links to what? 
+-	Ajax request 
+-	GWT renders everything
+-	Every request is ajax
+-	Java Applet for File Upload
+-	JVM 
+-	JDK 6.0 – cannot call
+-	Gwt
+-	Pure java on top of 
+-	Extend a model – enhance a plugin service or a new plugin service
+-	MediaFlux GWT 
+-	Own functions to communicate with media flux server
+-	Browser Compatibility – 
+-	JQuery – have to write functions to connect to media server
+-	Library will convert response to xml
+-	GWT as compiler of java to java script.
+-	HARD-CODE link to new functions.
+-	Stand-alone web application or a component of DARIS
+-	Single web application – integrate as module inside application
+o	Implement DARIS classes
+-	Convention of being told what-to-do.
+-	DocType builder in desktop….
+o	A set of steps + docTypes….
+DOCTYPES – xml form like XSL schema
+Namespaces for XML structure
+Schema is a unique combination of yaml/xsl
+
+ 
