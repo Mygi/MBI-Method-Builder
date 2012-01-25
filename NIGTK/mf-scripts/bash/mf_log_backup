@@ -1,0 +1,59 @@
+#!/bin/bash
+
+echo ""
+echo ""
+echo "Note: this script is to create a backup of the Mediaflux logs. It simply archive & compress the log files in \$MFLUX_HOME/volatile/logs directory to the backup directory. You need to export the environment variable: MFLUX_HOME and MFLUX_BACKUP_DIR to the correct locations."
+echo ""
+echo ""
+
+# check if tar exists
+if [[ -z `which tar` ]]; then
+	echo "Error: cannot find tar."
+	exit 1
+fi
+
+# check if gzip exists
+if [[ -z `which gzip` ]]; then
+	echo "Error: cannot find gzip."
+	exit 1
+fi
+
+# check if MFLUX_HOME is set
+if [[ -z $MFLUX_HOME ]]; then
+	echo "Error: MFLUX_HOME is not set."
+	exit 1
+fi
+
+MFLUX_LOG_DIR=$MFLUX_HOME/volatile/logs
+
+# check if MFLUX_LOG_DIR
+if [[ ! -e $MFLUX_LOG_DIR ]]; then
+	echo "Error: $MFLUX_LOG_DIR does not exist."
+	exit 1
+fi
+
+
+# MFLUX_BACKUP_DIR
+if [[ ! -z $1 ]]; then
+	if [[ -d $1 ]]; then
+		MFLUX_BACKUP_DIR=$1
+	else
+		echo "Error: $1 is not a directory"
+		exit 1
+	fi
+else
+	if [[ -z $MFLUX_BACKUP_DIR ]]; then
+		echo "Error: no MFLUX_BACKUP_DIR is set. you can either \"export MFLUX_BACKUP_DIR=/path/to/backup_dir; `basename $0`\" or \"`basename $0` /path/to/backup_dir\""
+		exit 1
+	fi
+fi
+
+# MFLUX_LOG_BACKUP_FILE
+MFLUX_LOG_BACKUP_FILE=$MFLUX_BACKUP_DIR/MFLUX.logs.tar.gz
+
+# Remove old backup
+rm -f $MFLUX_LOG_BACKUP_FILE
+
+# Create new backup
+tar czvf $MFLUX_LOG_BACKUP_FILE	$MFLUX_LOG_DIR/*
+

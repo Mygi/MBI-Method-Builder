@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# requires MF_EXEC
+MF_EXEC=`dirname $0`/mf_exec
+if [[ ! -e $MF_EXEC || ! -x $MF_EXEC ]]; then
+        echo 1>&2 "Error: could not find $MF_EXEC or it is not executable."
+        exit 1
+fi
+
+
+# parse args.
+until [ -z "$1" ]
+do
+	case "$1" in
+		"--domain" | "-d" )
+		DOMAIN=$2
+		shift
+		shift
+		;;
+		* )
+		shift
+		;;
+	esac
+done
+
+# --domain is required.
+if [[ -z "$DOMAIN" ]]; then
+	echo "USAGE: `basename $0` -d <domain>"
+	echo ""
+	echo "DESCRIPTION:      -d,--domain             authentication domain"
+	exit
+fi
+
+
+# calls MF_EXEC to list users. 
+$MF_EXEC user.list :domain $DOMAIN
+

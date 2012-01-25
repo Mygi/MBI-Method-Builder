@@ -1,0 +1,38 @@
+#!/bin/bash
+
+#
+# The wrapper script for $MFLUX_HOME/bin/aar.jar. It can be used to extract Mediaflux .aar file.
+#
+
+# check if $MFLUX_HOME is set
+if [[ -z $MFLUX_HOME ]]; then
+	echo "Error: MFLUX_HOME is not set."
+	exit 1
+fi
+
+# check if $AAR_JAR exists
+AAR_JAR=$MFLUX_HOME/bin/aar.jar
+if [[ ! -f $AAR_JAR ]]; then
+	echo "Error: could not find ${AAR_JAR}."
+	exit 1
+fi
+
+# check if java exists
+if [[ ! -z $JAVA_HOME ]]; then
+	export PATH=$JAVA_HOME/bin:$PATH
+fi
+if [[ -z `which java` ]]; then
+	echo "Error: could not find java."
+	exit 1
+fi
+
+# check if java version is equal to or greater than 1.5 
+JAVA_VERSION=`java -version 2>&1 | grep "java version" | awk '{print $3}' | tr -d \" | awk '{split($0, array, ".")} END{print array[2]}'`
+if [[ $JAVA_VERSION -lt 5 ]]; then
+	echo "Error: java version is lower than 1.5."
+	exit 1
+fi
+
+# execute $AAR_JAR
+java -jar $AAR_JAR $@
+

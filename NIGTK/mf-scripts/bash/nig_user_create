@@ -1,0 +1,68 @@
+#!/bin/sh
+
+# check if MF_EXEC script exists
+MF_EXEC="`dirname $0`/mf_exec"
+
+if [[ -z $MF_EXEC ]]; then
+        echo "Error: could not locate $MF_EXEC."
+        exit 1
+fi
+
+# parse args.
+until [ -z "$1" ]
+do
+	case "$1" in
+		"--user" | "-u" )
+		MFUSER=$2
+		shift
+		shift
+		;;
+		"--firstname" | "-fn" )
+		NAME_FIRST=$2
+		shift
+		shift
+		;;
+		"--lastname" | "-ln" )
+		NAME_LAST=$2
+		shift
+		shift
+		;;
+		"--middlename" | "-mn" )
+		NAME_MIDDLE=$2
+		shift
+		shift
+		;;
+		"--email" | "-m" )
+		EMAIL=$2
+		shift
+		shift
+		;;
+		"--password" | "-p" )
+		PASSWORD=$2
+		shift
+		shift
+		;;
+		* )
+		shift
+		;;
+	esac
+done
+
+# check args
+if [[ -z "$MFUSER" || -z "$PASSWORD" || -z "$EMAIL" || -z "$NAME_LAST" || -z "$NAME_FIRST" ]]; then
+	echo "USAGE: `basename $0` -u <user> -p <password> -m <email> -fn <firstName> -ln <lastName> [-mn <middleName>]"
+	echo "DESCRIPTION:"
+	echo "                  -u,--user               username"
+	echo "                  -p,--password           user's password"
+	echo "                  -fn,--firstname         user's first name"
+	echo "                  -ln,--lastname          user's last name"
+	echo "                  -mn,--middlename        user's middle name"
+	echo "                  -m,--email              user's email"
+	exit
+fi
+
+# create user
+DOMAIN=nig
+
+$MF_EXEC nig.user.create :domain $DOMAIN :user $MFUSER :password $PASSWORD :name -type first $NAME_FIRST :name -type last $NAME_LAST :email $EMAIL
+

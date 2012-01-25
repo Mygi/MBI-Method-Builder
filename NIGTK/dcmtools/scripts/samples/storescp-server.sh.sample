@@ -1,0 +1,46 @@
+#!/bin/bash
+
+STORESCP_USER=storescp
+PORT=6666
+RD=/data/hal/AMRIF-DICOM
+AET=AMRIF
+
+ERR_LOGFILE=/tmp/storescp-err.log
+OUT_LOGFILE=/tmp/storescp-out.log
+
+JAVA=/usr/bin/java
+DCMTOOLS_HOME=/usr/local/dcmtools
+UMASK=0002
+
+start() {
+	su -c "cd $RD; umask $UMASK; $JAVA -cp $DCMTOOLS_HOME/lib/dcmtools.jar nig.dicom.util.StoreSCP -port $PORT -rd $RD -aet $AET 1>$OUT_LOGFILE 2>$ERR_LOGFILE &" $STORESCP_USER
+}
+
+stop() {
+	PID=`ps -ef | grep nig.dicom.util.StoreSCP | grep storescp | awk '{print $2}'`
+	if [[ -n "$PID" ]]; then
+		su -c "kill $PID" $STORESCP_USER
+	fi
+}
+
+case "$1" in
+        start)
+                echo "Starting StoreSCP server... "
+				stop
+				start
+                ;;
+        stop)
+                echo "Stopping StoreSCP server... "
+                stop
+                ;;
+        restart)
+                stop
+                sleep 2
+                start
+                ;;
+        *)
+                echo "Usage: /etc/init.d/storescp-server {start|stop|restart}"
+                exit 1
+        ;;
+esac
+exit 0

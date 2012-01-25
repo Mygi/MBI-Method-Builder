@@ -1,0 +1,73 @@
+#!/bin/bash
+
+OUTPUT_PREFIX=exported_mflux_users
+OUTPUT_EXTENSION=xml
+
+function usage() {
+        echo "USAGE: `basename $0` [-d <domain>] [-o <output_file>]"
+        echo "DESCRIPTION:      -d,--domain             the authentication domain to export. Optional, if not specified, all domains are exported."
+        echo "                  -o,--output             the path to the output file. Optional, if not specified, save it in current directory."
+}
+
+function abspath() {
+	CWD=`pwd`
+	if [[ -d $1 ]]; then
+		cd $1
+	else
+		cd `dirname $1`
+	fi
+	ABS_PATH=`pwd`
+	cd $CWD
+	echo $ABS_PATH
+}
+
+# requires MF_EXEC
+MF_EXEC=`dirname $0`/mf_exec
+if [[ ! -e $MF_EXEC || ! -x $MF_EXEC ]]; then
+	echo 1>&2 "Error: could not find $MF_EXEC or it is not executable."
+	exit 1
+fi
+
+# parse args
+until [ -z "$1" ]
+do
+        case "$1" in
+                "--domain" | "-d" )
+                DOMAIN=$2
+                shift
+                shift
+                ;;
+                "--output" | "-o" )
+                OUTPUT=$2
+                shift
+                shift
+                ;;
+                * )
+                shift
+                ;;
+        esac
+done
+
+if [[ -z $OUTPUT ]]; then
+	OUTDIR=`pwd`
+	OUTPUT=file:${OUTDIR}/${OUTPUT_PREFIX}-`date +%Y%m%d%H%M%S`.${OUTPUT_EXTENSION}
+else
+	OUTDIR=`dirname $OUTPUT`
+	if [[ ! -d $OUTDIR ]]; then
+		echo 1>&2 "Error: $OUTDIR directory does not exist."
+		usage 
+		exit 1
+	fi
+	# convert to absolute path
+	CWD=`pwd`; cd $OUTDIR; OUTDIR=`pwd`; cd $CWD
+	OUTPUT=file:${OUTDIR}/`basename ${OUTPUT}`
+fi
+
+# call MF_EXEC
+if [[ -z $DOMAIN ]]; then
+	$MF_EXEC user.export :out $OUTPUT
+else
+	$MF_EXEC user.export :domain $DOMAIN :out $OUTPUT
+fi
+
+echo "Mediaflux users are exported to $OUTPUT."

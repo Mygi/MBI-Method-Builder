@@ -1,0 +1,166 @@
+#!/bin/bash
+
+#
+# @created-by  Neil Killeen
+# @modified-by Wilson Liu
+# @date        28/5/2011
+#
+
+#
+# Note: Use this script to extract assets from a Mediaflux .aar/.zip/.tar.gz archive.
+#       It creates a new directory with the unzipped content (usually 
+#       DICOM) ready for upload with pssd-dicom.
+#
+
+
+
+function usage () {
+    echo "USAGE: `basename $0` <archive file>"
+    echo "DESCRIPTION:"
+    echo "   Extracts the content from a Mediaflux asset archive into a directory ready for upload with pssd-dicom."
+}
+
+function has_java () {
+    MIN_VER=$1
+    if [[ -z $MIN_VER ]]; then
+        # defaults to java 5
+        MIN_VER=5
+    fi
+    JAVA=`which java`
+    if [[ -z $JAVA ]]; then
+        echo "false"
+	return
+    fi
+    VER=`java -version 2>&1 | grep "java version" | awk '{print $3}' | tr -d \" | awk '{split($0, array, ".")} END{print array[2]}'`
+    if [[ $VER -lt $MIN_VER ]]; then
+        echo "false"
+	return
+    fi
+    echo "true"
+}
+
+function is_zip () {
+    if [[ -z $1 ]]; then
+        echo "false"
+        return
+    fi
+    file=$1
+    ext=${file##*.}
+    if [[ ${ext} == "zip" || ${ext} == "ZIP" ]]; then
+        echo "true"
+    else
+        echo "false"
+    fi
+}
+
+#
+# check if unzip is available
+#
+
+if [[ -z `which unzip` ]]; then
+    echo 1>&2 "Error: could not find unzip."
+    exit 1
+fi
+
+
+#
+# read archive file from argument
+#
+ARCHIVE=$1
+if [[ -z $ARCHIVE ]]; then
+   echo 1>&2 "Error: no input archive file is specified."
+   usage
+   exit 1
+fi
+
+if [[ ! -e $ARCHIVE ]]; then
+   echo 1>&2 "Error: $ARCHIVE does not exist."
+   exit 1
+fi
+
+#
+# create temp directory
+#
+ARC_DIR=`dirname $ARCHIVE`; CWD=`pwd`; cd $ARC_DIR; ARC_DIR=`pwd`; cd $CWD
+TMP_DIR=`export TMPDIR=$ARC_DIR; mktemp -d`; CWD=`pwd`; cd $TMP_DIR; TMP_DIR=`pwd`; cd $CWD
+echo -n "creating temporary directory: $TMP_DIR... "
+if [[ ! -d $TMP_DIR ]]; then
+    echo 1>&2 "Error: failed to make $TMP_DIR"
+    exit 1
+fi
+echo "done."
+echo $TMP_DIR
+
+#
+# create output directory
+#
+OUT_DIR="`echo $ARCHIVE | sed 's/\.zip$//'`"
+OUT_DIR="`echo $OUT_DIR | sed 's/\.ZIP$//'`"
+OUT_DIR="`echo $OUT_DIR | sed 's/\.aar$//'`"
+OUT_DIR="`echo $OUT_DIR | sed 's/\.AAR$//'`"
+OUT_DIR="`echo $OUT_DIR | sed 's/\.tgz$//'`"
+OUT_DIR="`echo $OUT_DIR | sed 's/\.TGZ$//'`"
+OUT_DIR="`echo $OUT_DIR | sed 's/\.tar.gz$//'`"
+OUT_DIR="`echo $OUT_DIR | sed 's/\.TAR.GZ$//'`"
+OUT_DIR="${OUT_DIR}_`date +%Y%m%d%H%M%S`"
+echo -n "creating output directory: $OUT_DIR... "
+mkdir -p $OUT_DIR
+if [[ ! -d $OUT_DIR ]]; then
+    echo 1>&2 "Error: failed to make $OUT_DIR"
+    exit 1
+fi
+CWD=`pwd`; cd $OUT_DIR; OUT_DIR=`pwd`; cd $CWD
+echo "done."
+echo $OUT_DIR
+
+#
+# extract .aar/.zip/.tar.gz archive to $TMP_DIR
+# 
+echo "extracting $ARCHIVE to $TMP_DIR..."
+ARCHIVE_TYPE=${ARCHIVE##*.}
+if [[ ${ARCHIVE_TYPE} == "zip" || ${ARCHIVE_TYPE} == "ZIP" ]]; then
+    unzip $ARCHIVE -d $TMP_DIR
+fi
+if [[ ${ARCHIVE:(${#ARCHIVE}-7)} == ".tar.gz" || ${ARCHIVE:(${#ARCHIVE}-7)} == ".TAR.GZ" || ${ARCHIVE_TYPE} == "tgz" || ${ARCHIVE_TYPE} == "TGZ" ]]; then
+    if [[ -z "`which tar 2>/dev/null`" || -z "`which gunzip 2>/dev/null`" ]]; then
+        echo 1>&2 "Error: could not find tar or gunzip."
+        exit 1
+    fi
+    tar zxvf $ARCHIVE --directory $TMP_DIR
+fi
+if [[ ${ARCHIVE_TYPE} == "aar" || ${ARCHIVE_TYPE} == "AAR" ]]; then
+    if [[ -z $MFLUX_HOME ]]; then
+        echo 1>&2 "Error: MFLUX_HOME is not set."
+        exit 1
+    fi
+    AAR_JAR=$MFLUX_HOME/bin/aar.jar
+    if [[ ! -e $AAR_JAR ]]; then
+        echo 1>&2 "Error: $AAR_JAR does not exist."
+        exit 1
+    fi
+    java -jar $AAR_JAR -extract $ARCHIVE $TMP_DIR
+fi
+
+#
+# extract the zip contents to $OUT_DIR
+#
+cd $OUT_DIR
+ZIP_FILES=`find $TMP_DIR/ -type f -name *.zip -print0 | xargs -0 ls`
+for ZIP_FILE in $ZIP_FILES
+do
+    DIR=`basename $ZIP_FILE`
+	echo $DIR
+    DIR=`echo $DIR | sed 's/\.zip$//'`
+    DIR="${OUT_DIR}/${DIR}"
+    mkdir -p $DIR
+    unzip $ZIP_FILE -d $DIR
+done
+cd $CWD
+
+#
+# remove the temp directory
+#
+echo -n "removing temporary directory: $TMP_DIR... "
+rm -fr $TMP_DIR
+echo "done."
+

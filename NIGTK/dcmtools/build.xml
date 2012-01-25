@@ -1,0 +1,125 @@
+<project name="nig-dcmtools" default="zip" basedir=".">
+	<description>Dicom Tools based on Pixelmed libraries.</description>
+
+	<!--load properties from file-->
+	<property file="build.properties" />
+
+	<!--load build.number from file-->
+	<!--
+	<buildnumber file="build.number" />
+	-->
+
+	<!--set locations-->
+	<property name="src" location="./src" />
+	<property name="lib" location="../_lib_" />
+	<property name="scripts" location="./scripts" />
+	<property name="build" location="${build.base}/${app.name}" />
+	<property name="dist" location="${dist.base}/${app.name}" />
+	<property name="temp" location="${dist}/temp" />
+	<property name="dcmtools-jar" value="dcmtools.jar" />
+	<property name="dcmtools-tgz" value="dcmtools-${app.version}.tar.gz" />
+	<property name="dcmtools-zip" value="dcmtools-${app.version}.zip" />
+
+	<patternset id="lib.jars">
+		<include name="pixelmed/*.jar" />
+		<include name="nig-commons.jar" />
+	</patternset>
+
+	<!-- -->
+	<!--Target: init-->
+	<!-- -->
+	<target name="init">
+
+		<!-- Create the time stamp -->
+		<tstamp>
+			<format property="build_time" pattern="dd-MMM-yyyy kk:mm:ss z" />
+		</tstamp>
+
+		<!-- Create the build directory structure used by compile -->
+		<mkdir dir="${build}" />
+		<mkdir dir="${dist}" />
+		<mkdir dir="${temp}" />
+	</target>
+
+	<!-- -->
+	<!--Target: clean-->
+	<!-- -->
+	<target name="clean">
+		<delete>
+			<fileset dir="${build}" includes="**/*" />
+			<fileset dir="${dist}" includes="**/*" />
+		</delete>
+	</target>
+
+	<!-- -->
+	<!--Target: unjar-->
+	<!-- -->
+	<target name="unjar" depends="init,clean" description="Unjar the jar libraries to build directory.">
+		<unjar dest="${build}">
+			<patternset>
+				<exclude name="BUILDDATE" />
+				<exclude name="README" />
+				<exclude name="CHANGES" />
+				<exclude name="COPYRIGHT" />
+				<exclude name="META-INF/LICENSE.txt" />
+				<exclude name="META-INF/NOTICE.txt" />
+				<exclude name="META-INF/maven/**" />
+			</patternset>
+			<fileset dir="${lib}">
+				<patternset refid="lib.jars" />
+			</fileset>
+		</unjar>
+	</target>
+
+	<!-- -->
+	<!--Target: compile-->
+	<!-- -->
+	<target name="compile" depends="unjar" description="Compile the java source code">
+		<!-- Compile the java code from ${src} into ${build} -->
+		<javac debug="on" debuglevel="lines,vars,source" srcdir="${src}" destdir="${build}">
+			<classpath>
+				<fileset dir="${lib}">
+					<patternset refid="lib.jars" />
+				</fileset>
+			</classpath>
+		</javac>
+	</target>
+
+	<!-- -->
+	<!--Target: jar-->
+	<!-- -->
+	<target name="jar" depends="compile" description="Pack to jar file.">
+		<mkdir dir="${temp}/dcmtools/lib" />
+		<jar destfile="${temp}/dcmtools/lib/${dcmtools-jar}">
+			<manifest>
+				<attribute name="App-Version" value="${app.version}" />
+				<attribute name="Build-Time" value="${build_time}" />
+			</manifest>
+			<fileset dir="${build}" includes="**/*" />
+		</jar>
+		<copy file="${temp}/dcmtools/lib/${dcmtools-jar}" todir="${lib}"/>
+	</target>
+
+
+
+	<!-- -->
+	<!--Target: zip-->
+	<!-- -->
+	<target name="zip" depends="jar" description="Package everything into zip.">
+		<mkdir dir="${temp}/dcmtools/bin" />
+		<copy todir="${temp}/dcmtools/bin">
+			<fileset dir="${scripts}">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+		<echo message="${app.name} - V${app.version}${line.separator}" file="${temp}/dcmtools/version.txt" />
+		<tar destfile="${dist}/${dcmtools-tgz}" compression="gzip">
+			<tarfileset dir="${temp}" filemode="755" />
+		</tar>
+		<zip destfile="${dist}/${dcmtools-zip}">
+			<zipfileset dir="${temp}" filemode="755" />
+		</zip>
+		<delete dir="${temp}" />
+	</target>
+
+</project>

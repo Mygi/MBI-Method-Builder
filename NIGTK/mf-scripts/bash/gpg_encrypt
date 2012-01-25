@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# check if gpg exists
+if [[ -z `which gpg` ]]; then
+	echo "Error: could not find gpg."
+	exit 1
+fi
+
+# check if public key exists
+PUB_KEY=`gpg --list-public-keys --with-colons | grep pub`
+if [[ -z $PUB_KEY ]]; then
+	echo "Error: public key not found. run \"gpg --gen-key\" to generate keys. See http://www.neuroimaging.org.au/cgi-bin/twiki/view/Main/EncryptAndDecryptFilesUsingGnuPG for detail."
+	exit 1
+fi
+PUB_KEY_ID=`echo $PUB_KEY | tr -s ':' ' ' | awk '{print $5}'`
+PUB_KEY_ID=${PUB_KEY_ID:8:15}
+
+
+# check if the file to encrypt is specified
+if [[ -z $1 ]]; then
+	echo "Error: no input file specifed."
+	echo "Usage: `basename $0` <file> [encrypted-file]"
+	echo "Usage: `basename $0` <input-file> [output-file]"
+	exit 1
+fi
+
+INPUT=$1
+
+# set output file
+if [[ ! -z $2 ]]; then
+	OUTPUT=$2
+else
+	OUTPUT=${INPUT}.gpg
+fi
+
+# encrypt the file
+gpg -o $OUTPUT --encrypt -r $PUB_KEY_ID $INPUT

@@ -1,0 +1,82 @@
+#!/bin/bash
+
+# check if MF_EXEC script exists
+MF_EXEC="`dirname $0`/mf_exec"
+
+if [[ -z $MF_EXEC ]]; then
+	echo "Error: could not locate $MF_EXEC."
+	exit 1
+fi
+
+# parse arguments
+until [ -z "$1" ]
+do
+	case "$1" in
+		"--user" | "-u" )
+		MFUSER=$2
+		shift
+		shift
+		;;
+		"--domain" | "-d" )
+		DOMAIN=$2
+		shift
+		shift
+		;;
+		"--firstname" | "-fn" )
+		NAME_FIRST=$2
+		shift
+		shift
+		;;
+		"--lastname" | "-ln" )
+		NAME_LAST=$2
+		shift
+		shift
+		;;
+		"--middlename" | "-mn" )
+		NAME_MIDDLE=$2
+		shift
+		shift
+		;;
+		"--email" | "-m" )
+		EMAIL=$2
+		shift
+		shift
+		;;
+		"--password" | "-p" )
+		PASSWORD=$2
+		shift
+		shift
+		;;
+		"--roles" | "-r" )
+		#replace comma with space
+		ROLES=${2//\,/\ }
+		shift
+		shift
+		;;
+		* )
+		shift
+		;;
+	esac
+done
+if [[ -z "$DOMAIN" || -z "$MFUSER" || -z "$PASSWORD" || -z "$EMAIL" || -z "$NAME_LAST" || -z "$NAME_FIRST" ]]; then
+	echo "USAGE: `basename $0` -d <domain> -u <user> -p <password> -m <email> -fn <firstName> -ln <lastName> [-mn <middleName>] [-r <role1,role2...>]"
+	echo "DESCRIPTION:      -d,--domain             authentication domain of the user"
+	echo "                  -u,--user               username"
+	echo "                  -p,--password           user's password"
+	echo "                  -fn,--firstname         user's first name"
+	echo "                  -ln,--lastname          user's last name"
+	echo "                  -mn,--middlename        user's middle name"
+	echo "                  -m,--email              user's email"
+	echo "                  -r,--roles              roles to assign to the user, separated by comma"
+	exit
+fi
+
+# create user
+$MF_EXEC user.create :domain $DOMAIN :user $MFUSER :password $PASSWORD :email $EMAIL :meta \< :mf-user \< :name -type first $NAME_FIRST :name -type last $NAME_LAST :email $EMAIL \> \>
+
+# grant role(s)
+for ROLE in $ROLES
+do
+	$MF_EXEC actor.grant :type user :name $DOMAIN:$MFUSER :role -type role $ROLE
+done
+

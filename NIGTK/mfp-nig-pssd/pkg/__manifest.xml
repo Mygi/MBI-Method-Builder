@@ -1,0 +1,14 @@
+<manifest>
+	<package>nig-pssd</package>
+	<version>@version@</version>
+	<build-time>@build-time@</build-time>
+	<vendor>Neuroimaging Group, Howard Florey Institute</vendor>
+	<vendorurl>http://www.neuroimaging.org.au</vendorurl>
+	<description>NIG-PSSD plugins and configuration scripts for Mediaflux</description>
+	<!--
+		<dependencies>
+			<package>nig-essentials</package>
+			<package>PSSD</package>
+		</dependencies>
+	-->
+</manifest>

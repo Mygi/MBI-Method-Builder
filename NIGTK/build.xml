@@ -1,0 +1,31 @@
+<project name="Apps" default="build-all">
+	<target name="build-all">
+
+		<echo>${line.separator}Building NIG commons libraries...</echo>
+		<ant dir="commons" target="deploy"/>
+
+		<echo>${line.separator}Building NIG DCMTools...</echo>
+		<ant dir="dcmtools"/>
+		
+		<echo>${line.separator}Building Bruker ParaVisionUpload Client for Mediaflux...</echo>
+		<ant dir="mfc-pvupload"/>
+		
+		<echo>${line.separator}Building Transcode Plugin for Mediaflux...</echo>
+		<ant dir="mfp-transcode"/>
+		
+		<echo>${line.separator}Building NIG Essentials Plugin for Mediaflux...</echo>
+		<ant dir="mfp-essentials"/>
+		
+		<echo>${line.separator}Building PSSD Plugin for Mediaflux...</echo>
+		<ant dir="mfp-pssd"/>
+		
+		<echo>${line.separator}Building NIG PSSD Plugin for Mediaflux...</echo>
+		<ant dir="mfp-nig-pssd"/>
+
+		<echo>${line.separator}Building PSSD Server Configure Client for Mediaflux...</echo>
+		<ant dir="mfc-server-config"/>
+		
+		<echo>${line.separator}Building PSSD DICOM Client for Mediaflux...</echo>
+		<ant dir="mfc-dicom-client"/>
+	</target>
+</project>

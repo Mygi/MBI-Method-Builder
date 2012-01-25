@@ -1,0 +1,13 @@
+#!/bin/bash
+
+if [[ ! -f "`dirname $0`/../lib/dcmtools.jar" ]]; then
+        echo "Error: could not find dcmtools.jar file." >&2
+        exit 1
+fi
+
+if [[ -z "`which java`" ]]; then
+        echo "Error: could not find java." >&2
+        exit 1
+fi
+
+java -cp `dirname $0`/../lib/dcmtools.jar nig.dicom.util.StoreSCP $@

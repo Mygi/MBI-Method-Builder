@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# requires mf_exec
+MF_EXEC=`dirname $0`/mf_exec
+if [[ ! -e $MF_EXEC || ! -x $MF_EXEC ]]; then
+	echo 1>&2 "Error: could not find $MF_EXEC or $MF_EXEC is not executable."
+	exit 1
+fi
+
+
+# parse args
+until [ -z "$1" ]
+do
+	case "$1" in
+		"--user" | "-u" )
+		MFUSER=$2
+		shift
+		shift
+		;;
+		"--domain" | "-d" )
+		DOMAIN=$2
+		shift
+		shift
+		;;
+		* )
+		shift
+		;;
+	esac
+done
+
+if [[ -z "$DOMAIN" || -z "$MFUSER" ]]; then
+	echo "USAGE: `basename $0` -d <domain> -u <user>"
+	echo ""
+	echo "DESCRIPTION:      -d,--domain             authentication domain of the user"
+	echo "                  -u,--user               username"
+	exit
+fi
+
+# destroy user
+$MF_EXEC user.destroy :domain $DOMAIN :user $MFUSER
+

@@ -1,0 +1,51 @@
+profile ATTACHMENT {
+
+	construct DS_STORE {
+	
+		match {
+			file name ".DS_Store"
+		}
+		
+		consume no
+	}
+
+    construct ATTACH-FILE {
+       
+       match {
+          file is file
+       }
+       
+       logical type encapsulation type
+       
+       consume yes
+       
+       consumer {
+           service "om.pssd.object.attach"
+           arguments "<id></id><attachment><name></name><description></description></attachment>"
+           add "variable:id" value at "id"
+           add "variable:name" value at "attachment/name"
+           add "variable:description" value at "attachment/description"
+       }
+
+    }
+
+    
+    construct ATTACH-DIRECTORY {
+       match {
+           file is directory
+       }
+       
+       encapsulate as archive level 6
+       
+       logical type encapsulation type
+       consume yes
+
+       consumer {
+           service "om.pssd.object.attach"
+           arguments "<id></id><attachment><name></name><description></description></attachment>"
+           add "variable:id" value at "id"
+           add "variable:name" value at "attachment/name"
+           add "variable:description" value at "attachment/description"
+       }
+    }
+}

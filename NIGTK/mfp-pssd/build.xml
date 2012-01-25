@@ -1,0 +1,116 @@
+<!-- This file builds a mflux PSSD package for the Mediaflux server   -->
+
+<project name="pssd" default="mf-package" basedir=".">
+	<description>Builds Mediaflux PSSD package</description>
+	<!--Read properties from file-->
+	<property file="build.properties" />
+
+	<!-- set global properties for this build -->
+	<property name="src" location="./src" />
+	<property name="lib" location="../_lib_" />
+	<property name="aplugin-jar" location="${lib}/mflux/aplugin.jar" />
+	<property name="build" location="${build.base}/${app.name}" />
+	<property name="dist" location="${dist.base}/${app.name}" />
+	<property name="pkg-src" location="./pkg" />
+	<property name="pkg-temp" location="${dist}/temp" />
+	<property name="pkg-file" value="mfpkg-${app.name}-${app.version}-mf${mf.server.version}.zip" />
+	<property name="plugin-jar" value="pssd-plugin.jar" />
+	<property name="plugin-zip" value="pssd-plugin.zip" />
+
+	<patternset id="plugin.libs">
+		<!-- nig-commons.jar is required. dcmtools.jar already includes it. -->
+		<include name="dcmtools.jar" />
+	</patternset>
+
+	<!-- -->
+	<!-- Target: init -->
+	<!-- -->
+	<target name="init">
+
+		<!-- Create the time stamp -->
+		<tstamp>
+			<format property="build_time" pattern="dd-MMM-yyyy kk:mm:ss z" />
+		</tstamp>
+
+		<!-- Create the build directory structure used by compile -->
+		<delete quiet="true" dir="${build}" />
+		<delete quiet="true" dir="${dist}" />
+		<mkdir dir="${build}" />
+		<mkdir dir="${dist}" />
+		<mkdir dir="${pkg-temp}" />
+
+	</target>
+
+	<!-- -->
+	<!--Target: clean-->
+	<!-- -->
+	<target name="clean">
+		<delete>
+			<fileset dir="${build}" includes="**/*" />
+			<fileset dir="${dist}" includes="**/*" />
+			<fileset dir="${pkg-temp}" includes="**/*" />
+		</delete>
+	</target>
+
+	<!-- -->
+	<!--Target: compile-->
+	<!-- -->
+	<target name="compile" depends="init,clean" description="Compile the java source">
+		<!-- Compile the java code from ${src} into ${build} -->
+		<javac debug="on" debuglevel="lines,vars,source" srcdir="${src}" destdir="${build}">
+			<classpath>
+				<fileset dir="${lib}">
+					<patternset refid="plugin.libs" />
+				</fileset>
+				<pathelement location="${aplugin-jar}" />
+			</classpath>
+		</javac>
+	</target>
+
+	<!-- -->
+	<!--Target: mf-plugin-->
+	<!-- -->
+	<target name="mf-plugin" depends="compile" description="Mediaflux Server Module Plug-in">
+		<jar filesonly="true" destfile="${pkg-temp}/${plugin-jar}">
+			<fileset dir="${build}" includes="**/*" />
+		</jar>
+		<mkdir dir="${pkg-temp}/libs" />
+		<copy todir="${pkg-temp}/libs">
+			<fileset dir="${lib}">
+				<patternset refid="plugin.libs" />
+			</fileset>
+		</copy>
+		<zip filesonly="true" destfile="${pkg-temp}/${plugin-zip}">
+			<fileset dir="${pkg-temp}">
+				<include name="${plugin-jar}" />
+				<include name="libs/*" />
+			</fileset>
+		</zip>
+	</target>
+
+	<!-- -->
+	<!-- Target: mf-package-->
+	<!-- -->
+	<target name="mf-package" depends="mf-plugin" description="Build mediaflux package">
+		<delete file="${pkg-temp}/__manifest.xml" />
+		<copy file="${pkg-src}/__manifest.xml" tofile="${pkg-temp}/__manifest.xml" />
+		<replace file="${pkg-temp}/__manifest.xml" token="@version@" value="${app.version}" />
+		<replace file="${pkg-temp}/__manifest.xml" token="@build-time@" value="${build_time}" />
+		<copy todir="${pkg-temp}" overwrite="true">
+			<fileset dir="${pkg-src}" includes="**/*.tcl" />
+			<fileset dir="${pkg-src}" includes="**/*.fcp" />
+			<fileset dir="${pkg-src}" includes="**/*.xsl" />		
+		</copy>
+		<replace file="${pkg-temp}/requireServerVersion.tcl" token="@requiredVersion@" value="${mf.server.version}" />
+		<zip filesonly="true" destfile="${dist}/${pkg-file}">
+			<fileset dir="${pkg-temp}" includes="**/*.tcl" />
+			<fileset dir="${pkg-src}" includes="**/*.fcp" />
+			<fileset dir="${pkg-temp}" includes="**/*.xsl" />
+			<fileset dir="${pkg-temp}" includes="__manifest.xml" />
+			<fileset dir="${pkg-temp}" includes="${plugin-zip}" />
+		</zip>
+
+		<delete dir="${pkg-temp}" />
+	</target>
+
+</project>

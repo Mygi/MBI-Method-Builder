@@ -1,0 +1,8 @@
+<manifest>
+  <package>PSSD</package>
+  <version>@version@</version>
+  <build-time>@build-time@</build-time>
+  <vendor>Howard Florey Institute</vendor>
+  <vendorurl>http://www.florey.edu.au</vendorurl>
+  <description>PSSD Object Model</description>
+</manifest>

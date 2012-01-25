@@ -1,0 +1,47 @@
+#!/bin/sh
+
+# requires mf_exec
+MF_EXEC=`dirname $0`/mf_exec
+if [[ ! -x $MF_EXEC || ! -e $MF_EXEC ]]; then
+	echo 1>&2 "Error: could not find $MF_EXEC."
+	exit 1
+fi
+
+
+# parse args
+until [ -z "$1" ]
+do
+	case "$1" in
+		"--user" | "-u" )
+		MFUSER=$2
+		shift
+		shift
+		;;
+		"--domain" | "-d" )
+		DOMAIN=$2
+		shift
+		shift
+		;;
+		* )
+		shift
+		;;
+	esac
+done
+
+# --domain is required
+if [[ -z "$DOMAIN" ]]; then
+	echo "USAGE: `basename $0` -d <domain> [-u <user>]"
+	echo ""
+	echo "DESCRIPTION:      -d,--domain             authentication domain of the user"
+	echo "                  -u,--user               username. If no user specified, all users in the domain will be displayed."
+	exit
+fi
+
+
+# --user is optional. If not specified, display all the users within the specified domain.
+if [[ -z "$MFUSER" ]]; then
+	$MF_EXEC user.describe :domain $DOMAIN
+else
+	$MF_EXEC user.describe :domain $DOMAIN :user $MFUSER
+fi
+

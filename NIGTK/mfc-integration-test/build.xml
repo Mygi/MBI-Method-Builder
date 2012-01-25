@@ -1,0 +1,98 @@
+<project name="mfc-integration-test" default="integration-test"  basedir=".">
+	<description>
+    	Build DaRIS-integration-test the Mediaflux client application that does the base Mediaflux configuration for DaRIS
+    </description>
+
+	<!--Read properties from file-->
+	<property file="build.properties" />
+	
+	<!--load build.number from file-->
+	
+	<!--
+	<buildnumber file="build.number" />
+	-->
+	
+	<!--Set default locations-->
+	<property name="src" location="./src" />
+	<property name="lib" location="../_lib_" />	
+	<property name="script" location="./script" />
+	<property name="build" location="${build.base}/${app.name}" />
+	<property name="dist" location="${dist.base}/${app.name}" />
+	<property name="integration-test-jar" value="integration-test.jar" />
+	<property name="integration-test-zip" value="integration-test-${app.version}.zip" />
+
+	<patternset id="lib.jars">
+		<include name="mflux/mfclient.jar" />
+		<include name="nig-commons.jar" />
+	</patternset>
+
+	<!-- Create the time stamp -->
+	<tstamp>
+		<format property="build_time" pattern="dd-MMM-yyyy kk:mm:ss z" />
+	</tstamp>
+
+	<!-- -->
+	<!--Target: init-->
+	<!-- -->
+	<target name="init" description="initialize directories">
+		<mkdir dir="${build}" />
+		<mkdir dir="${dist}" />
+	</target>
+
+	<!-- -->
+	<!--Target: clean-->
+	<!-- -->
+	<target name="clean" description="clean up the directories">
+		<delete>
+			<fileset dir="${dist}" includes="**/*" />
+			<fileset dir="${build}" includes="**/*" />
+		</delete>
+	</target>
+
+	<!-- -->
+	<!--Target: compile-->
+	<!-- -->
+	<target name="compile" depends="init,clean" description="Compile the java source">
+		<!-- Compile the java code from ${src} into ${build} -->
+		<javac debug="on" debuglevel="lines,vars,source" srcdir="${src}" destdir="${build}">
+			<classpath>
+				<fileset dir="${lib}">
+					<patternset refid="lib.jars" />
+				</fileset>
+			</classpath>
+		</javac>
+	</target>
+
+	<!-- -->
+	<!--Target: DaRIS-ServerConfig -->
+	<!-- -->
+	<target name="integration-test" depends="compile" description="pack them up.">
+		<unjar dest="${build}">
+			<patternset>
+				<exclude name="META-INF/LICENSE.txt" />
+				<exclude name="META-INF/NOTICE.txt" />
+				<exclude name="META-INF/maven/**" />
+			</patternset>
+			<fileset dir="${lib}">
+				<patternset refid="lib.jars" />
+			</fileset>
+		</unjar>
+		<jar destfile="${dist}/${integration-test-jar}">
+			<manifest>
+				<attribute name="Main-Class" value="nig.mf.pssd.client.integrationtest.IntegrationTest" />
+				<attribute name="App-Version" value="${app.version}" />
+				<attribute name="Build-Time" value="${build_time}" />
+			</manifest>
+			<fileset dir="${build}" includes="**/*" />
+			<!--
+			<zipgroupfileset dir="${lib}">
+				<patternset refid="lib.jars" />
+			</zipgroupfileset>
+			-->
+		</jar>
+		<zip destfile="${dist}/${integration-test-zip}">
+			<fileset dir="${script}" includes="**/*" />
+			<fileset dir="${dist}" includes="${integration-test-jar}" />
+		</zip>
+	</target>
+</project>

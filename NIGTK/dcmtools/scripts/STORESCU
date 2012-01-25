@@ -1,0 +1,20 @@
+#!/bin/bash
+
+if [[ ! -f "`dirname $0`/../lib/dcmtools.jar" ]]; then
+        echo "Error: could not find dcmtools.jar file." >&2
+        exit 1
+fi
+
+if [[ -z "`which java`" ]]; then
+        echo "Error: could not find java." >&2
+        exit 1
+fi
+
+# check if java version is equal to or greater than 1.5 
+JAVA_VERSION=`java -version 2>&1 | grep "java version" | awk '{print $3}' | tr -d \" | awk '{split($0, array, ".")} END{print array[2]}'`
+if [[ $JAVA_VERSION -lt 5 ]]; then
+	echo "Error: java version is lower than 1.5."
+	exit 1
+fi
+
+java -cp `dirname $0`/../lib/dcmtools.jar nig.dicom.util.StoreSCU $@

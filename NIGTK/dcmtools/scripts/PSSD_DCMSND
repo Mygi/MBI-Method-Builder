@@ -1,0 +1,127 @@
+#!/bin/bash
+
+AEC=HFI-DICOM-TEST
+
+# check if java is available
+if [[ -z "`which java`" ]]; then
+        echo "Error: could not find java." >&2
+        exit 1
+fi
+
+# check if java 5 is available
+JAVA_VERSION=`java -version 2>&1 | grep "java version" | awk '{print $3}' | tr -d \" | awk '{split($0, array, ".")} END{print array[2]}'`
+if [[ $JAVA_VERSION -lt 5 ]]; then
+	echo "Error: java version is lower than 1.5."
+	exit 1
+fi
+
+# check if dcmtools.jar is available
+if [[ ! -f "`dirname $0`/../lib/dcmtools.jar" ]]; then
+        echo "Error: could not find dcmtools.jar file." >&2
+        exit 1
+fi
+
+
+function usage {
+	
+	echo "Usage: `basename $0` <aet@host:port> [-aec <callingAETitle>]-id <cid> <dicom-dir>"
+	echo "Description:     aet:       The called(remote) AE title."
+	echo "                 host:      The remote DICOM StorageSCP server address."
+	echo "                 port:      The remote DICOM StorageSCP server port."
+	echo "                 aec:       The calling(local) AE title. Optional. Defaults to HFI-DICOM-TEST."
+	echo "                 cid:       The citeable id."
+	echo "                 dicom-dir: The directory contains DICOM files to be send."
+	echo "Examples:"
+	echo "         `basename $0` HFI@fornix.neuroimaging.org.au:6666 -aec HFI-DICOM-TEST -id 1005.2.1.1 ./my_dcm_dir"
+
+}
+
+
+if [[ $# -ne 4 && $# -ne 6 ]]; then
+	echo "Error: invalid arguments."
+	usage
+	exit 1
+fi
+
+# parse server address
+address=$1
+i=`expr index $address @`
+AET=${address:0:$((i-1))}
+j=`expr index $address :`
+HOST=${address:$i:$((j-i-1))}
+PORT=${address:$j:((${#address}-j))}
+shift
+
+# the directory contains DICOM files
+DICM_DIR=$(eval "echo \$$#")
+
+if [[ ! -d $DICM_DIR ]]; then
+	echo "Error: $DICM_DIR is not a directory."
+	usage
+	exit 1
+fi
+
+until [[ -z $1 ]]
+do
+	case "$1" in
+        "--id" | "-id" )
+		ID=$2
+        shift
+        ;;
+        "--aec" | "-aec" )
+        AEC=$2
+        shift
+        ;;
+        * )
+        shift
+        ;;
+    esac	
+done
+
+# check if the -id is present
+if [[ -z $ID ]]; then
+	echo "Error: --id is not specified."
+	usage
+	exit 1
+fi
+
+# check if the id depth is correct.
+DEPTH=`echo $ID | tr "\." "\n" | wc -l`
+
+if [[ $DEPTH -ne 4 ]]; then
+	echo "Error: invalid id: $ID. Should be in the format of x.x.P.S, e.g. 1005.2.19.1."
+	usage
+	exit 1
+fi
+
+# remove the first to sections of ID, leaves only P.S part.
+n1=`echo $ID | tr "\." " " | awk '{print $3}'`
+n2=`echo $ID | tr "\." " " | awk '{print $4}'`
+ID=${n1}.${n2}
+
+# create temp directory
+TEMP_DIR=`export TMPDIR=~; mktemp -d`
+echo -n "Info: Making temporary directory: $TEMP_DIR..."
+echo "done."
+
+# copy dicom files  to the temp directory
+echo -n "Info: Copying files to the temporary directory..."
+cp -r $DICM_DIR/* $TEMP_DIR/
+echo "done."
+
+# modify the patient's name field. Fill it with the PSSD subject id
+DCMODIFY="java -cp `dirname $0`/../lib/dcmtools.jar nig.dicom.util.DicomModify "
+echo "Info: Modifying DICOM header (0010,0010)=^${ID}..."
+$DCMODIFY "(0010,0010)=^${ID}" $TEMP_DIR/* 
+
+# send the modified files to the server.
+STORESCU="java -cp `dirname $0`/../lib/dcmtools.jar nig.dicom.util.StoreSCU "
+echo -n "Info: Sending DICOM files to Mediaflux Server(Subject: $ID)..."
+$STORESCU -host $HOST -port $PORT -calledAETitle $AET -callingAETitle $AEC $TEMP_DIR/*
+echo "done."
+
+# remove the temp directory
+echo -n "Info: Removing temp directory: $TEMP_DIR..."
+rm -fr $TEMP_DIR
+echo "done."
+

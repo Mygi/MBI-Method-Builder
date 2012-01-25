@@ -1,0 +1,50 @@
+profile DATASET_PRIMARY {
+
+	construct DS_STORE {
+	
+		match {
+			file name ".DS_Store"
+		}
+		
+		consume no
+	}
+
+    construct DATASET_FILE {
+       
+       match {
+          file is file
+       }
+       
+       logical type encapsulation type
+       
+       consume yes
+       
+       consumer {
+           service "om.pssd.dataset.primary.create"
+           arguments "<pid></pid><name></name>"
+           add "variable:pid" value at "pid"
+           add "variable:name" value at "name"
+       }
+
+    }
+
+    
+    construct DATASET_DIRECTORY {
+       match {
+           file is directory
+       }
+       
+       encapsulate as archive level 6
+       
+       logical type encapsulation type
+       
+       consume yes
+
+       consumer {
+           service "om.pssd.dataset.primary.create"
+           arguments "<pid></pid><name></name>"
+           add "variable:pid" value at "pid"
+           add "variable:name" value at "name"
+       }
+    }
+}

@@ -1,0 +1,30 @@
+profile DICOM {
+
+    construct DCM-FILE {
+       match {
+           /* look for 'D' 'I' 'C' 'M' at offset 128 */
+           file contains bytes 4449434d at 128
+       }
+    }
+    
+    construct DCM-SET {
+       match {
+           group unnamed {
+               construct DCM-FILE
+           }
+       }
+
+       encapsulate as archive level 6
+       
+       logical type encapsulation type
+
+       consume yes
+
+       consumer {
+           service "dicom.ingest"
+           arguments "<anonymize></anonymize><engine>nig.dicom</engine><arg name=\"nig.dicom.id.citable\"></arg>"
+           add "variable:anonymize" value at "anonymize"
+           add "variable:nig.dicom.id.citable" value at "arg[@name='nig.dicom.id.citable']"
+       }
+    }
+}

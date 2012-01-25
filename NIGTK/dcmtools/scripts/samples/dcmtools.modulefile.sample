@@ -1,0 +1,27 @@
+#%Module1.0#####################################################################
+##
+## DCMTools modulefile
+##
+## modulefiles/dcmtools
+##
+proc ModulesHelp { } {
+        global dcmtoolsversion
+
+        puts stderr "\tSetup environment variables for DCMTools.\n"
+        puts stderr "\tVersion: $dcmtoolsversion\n"
+}
+
+
+module-whatis   "Setup environment variables for DCMTools."
+
+# for Tcl script use only
+# Needs Java 1.5 or above. Location is host depenendent
+
+set          java_home            /usr/local/java/jdk
+setenv       JAVA_HOME            $java_home
+set          dcmtoolsversion      0.06
+set          dcmtools_home        /usr/local/dcmtools
+
+prepend-path PATH                 $dcmtools_home/bin
+prepend-path PATH                 $java_home/bin
+

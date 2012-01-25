@@ -1,0 +1,142 @@
+#!/bin/bash
+
+#
+# This script is to export all the assets in the specified namespaces to xml files.
+# 
+
+#==========================================================================#
+#                                  Settings                                #
+#==========================================================================#
+
+NAMESPACES="dicom system/users pssd"
+
+PREFIX=mf_xodb_export
+
+PARTS=all
+
+ENCRYPT=false
+
+CLEAN=false
+
+NUM_BACKUPS_TO_KEEP=6
+
+#==========================================================================#
+#                                    Main                                  #
+#==========================================================================#
+
+# parse arguments
+until [ -z "$1" ]
+do
+	case "$1" in
+		"--backup-dir" )
+		MFLUX_BACKUP_DIR=$2
+		if [[ ! -d $MFLUX_BACKUP_DIR ]]; then
+			echo "Error: $MFLUX_BACKUP_DIR is not a directory."
+			exit 1
+		fi	
+		shift
+		shift
+		;;
+		"--namespaces" )
+		NAMESPACES=${2//\,/\ }
+		shift
+		shift
+		;;
+		"--parts" )
+		PARTS=$2
+		PARTS=`echo $PARTS | tr '[:upper:]' '[:lower:]'`
+		if [[ ! $PARTS == "all" && ! $PARTS == "meta" && ! $PARTS == "content" ]]; then
+			echo "Error: wrong --parts value: $PARTS. should be all, meta or content."
+			exit 1
+		fi
+		shift
+		shift
+		;;
+		"--encrypt" )
+		ENCRYPT=true
+		shift
+		;;
+		* )
+		shift
+		;;
+	esac
+done
+
+# check if MFLUX_BACKUP_DIR is set
+if [[ -z $MFLUX_BACKUP_DIR ]]; then
+	echo "Error: backup directory is not specified. You can either \"export MFLUX_BACKUP_DIR=/path/to/backup_dir\" or specify --backup-dir argument."
+	exit 1
+fi
+
+# The backup directoy
+BACKUP_DIR=$MFLUX_BACKUP_DIR/${PREFIX}-`date +%Y%m%d%H%M%S`
+
+# The backup list file
+BACKUP_LIST=$MFLUX_BACKUP_DIR/${PREFIX}-backup.list
+
+# create backup directory
+mkdir -p $BACKUP_DIR
+
+# append to BACKUP_LIST file
+echo "$BACKUP_DIR" >> $BACKUP_LIST
+
+# check if mfexec script exists
+MFEXEC=`dirname $0`/mf_exec
+if [[ ! -e $MFEXEC ]]; then
+	echo "Error: cannot find $MFEXEC"
+	exit 1
+fi
+if [[ ! -x $MFEXEC ]]; then
+	echo "Error: $MFEXEC is not excutable. try \"chmod +x ${MFEXEC}\""
+	exit 1
+fi
+
+##
+## export the namespaces one by one
+##
+for namespace in $NAMESPACES
+do
+	echo -n "backing up $namespace..."
+	$MFEXEC  asset.archive.create :parts $PARTS :cref true :where "namespace>=$namespace" :out $BACKUP_DIR/MF_Archive-${namespace//\//_}.aar
+	echo "done."
+	if [[ $ENCRYPT == "true" ]]; then
+		GPG_ENCRYPT="`dirname $0`/gpg_encrypt"
+		if [[ ! -e $GPG_ENCRYPT ]]; then
+			echo "Error: could not find $GPG_ENCRPT."
+			exit 1
+		fi
+		if [[ ! -x $GPG_ENCRYPT ]]; then
+			echo "Error: $GPG_ENCRPT is not executable."
+			exit 1
+		fi
+		echo -n  "encrypting backup file..."
+		gpg_encrypt $BACKUP_DIR/MF_Archive-${namespace//\//_}.aar $BACKUP_DIR/MF_Archive-${namespace//\//_}.aar.gpg
+		rm -f $BACKUP_DIR/MF_Archive-${namespace//\//_}.aar
+		echo "done"
+	fi
+done
+
+
+##
+## clean the old backups (keep $NUM_BACKUPS_TO_KEEP backups)
+##
+
+NUM_BACKUPS=`wc -l $BACKUP_LIST | awk '{print $1}'`
+if [ $NUM_BACKUPS -le $NUM_BACKUPS_TO_KEEP ]; then
+	exit 0
+fi
+
+# calc the number of old backups to delete
+NUM_BACKUPS_TO_DELETE=$((NUM_BACKUPS-NUM_BACKUPS_TO_KEEP))
+
+# delete the old backups
+for backup in `head -$NUM_BACKUPS_TO_DELETE $BACKUP_LIST`
+do
+	rm -fr $backup	
+done
+
+# update the backup list
+tail -n $NUM_BACKUPS_TO_KEEP $BACKUP_LIST > $BACKUP_LIST.tmp
+cat $BACKUP_LIST.tmp > $BACKUP_LIST
+rm $BACKUP_LIST.tmp
+	

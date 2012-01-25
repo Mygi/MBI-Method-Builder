@@ -1,0 +1,42 @@
+#!/bin/bash
+
+# requires MF_EXEC
+MF_EXEC=`dirname $0`/mf_exec
+if [[ ! -e $MF_EXEC || ! -x $MF_EXEC ]]; then
+        echo 1>&2 "Error: could not find $MF_EXEC or it is not executable."
+        exit 1
+fi
+
+# parse args.
+until [ -z "$1" ]
+do
+        case "$1" in
+                "--user" | "-u" )
+                MFUSER=$2
+                shift
+                shift
+                ;;
+                "--domain" | "-d" )
+                MFDOMAIN=$2
+                shift
+                shift
+                ;;
+                * )
+                shift
+                ;;
+        esac
+done
+
+# check args.
+if [[ -z "$MFUSER" || -z "$MFDOMAIN" ]]; then
+        echo "USAGE: `basename $0` -u <user>"
+        echo "DESCRIPTION:"
+        echo "                  -u,--user               username"
+        exit
+fi
+
+
+
+# Remove user from PSSD projects and destroy
+$MF_EXEC om.pssd.user.remove :domain $MFDOMAIN :user $MFUSER
+$MF_EXEC user.destroy :domain $MFDOMAIN :user $MFUSER

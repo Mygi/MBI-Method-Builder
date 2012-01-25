@@ -1,0 +1,48 @@
+profile DATASET_DERIVATION {
+
+	construct DS_STORE {
+	
+		match {
+			file name ".DS_Store"
+		}
+		
+		consume no
+	}
+
+    construct DATASET_FILE {
+       
+       match {
+          file is file
+       }
+       
+       logical type encapsulation type
+       
+       consume yes
+       
+       consumer {
+           service "om.pssd.dataset.derivation.create"
+           arguments "<pid></pid>"
+           add "variable:pid" value at "pid"
+       }
+
+    }
+
+    
+    construct DATASET_DIRECTORY {
+       match {
+           file is directory
+       }
+       
+       encapsulate as archive level 6
+       
+       logical type encapsulation type
+       
+       consume yes
+
+       consumer {
+           service "om.pssd.dataset.derivation.create"
+           arguments "<pid></pid>"
+           add "variable:pid" value at "pid"
+       }
+    }
+}

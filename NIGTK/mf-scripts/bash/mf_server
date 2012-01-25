@@ -1,0 +1,124 @@
+#!/bin/bash
+
+#
+# @author Wilson Liu
+# @date   28/5/2011
+#
+
+#
+# Note: this is wrapper script calls $MFLUX_HOME/bin/unix/mediaflux. To use this script, you need to
+#       set/export follow env variables(compulsory): 
+#           MFLUX_HOME:
+#           MFLUX_HOST:
+#           MFLUX_PORT:
+#           MFLUX_TRANSPORT:
+#           MFLUX_DOMAIN:
+#           MFLUX_USER:
+#           MFLUX_PASSWORD: 
+#
+#       and the following env variables(optional):
+#
+#           MFLUX_OS_USER:  if you want run the script as MFLUX_OS_USER other than root;
+#           MFLUX_MASK:     if you want to specify umask for the running Mediaflux server process. 
+#
+
+# check if $MFLUX_HOME is set
+if [[ -z $MFLUX_HOME ]]; then
+        echo "Error: MFLUX_HOME is not set."
+        exit 1
+fi
+
+# check if $MEDIAFLUX exists
+MEDIAFLUX=$MFLUX_HOME/bin/unix/mediaflux
+if [[ ! -f $MEDIAFLUX ]]; then
+        echo "Error: could not find $MEDIAFLUX"
+        exit 1
+fi
+
+# check if $MEDIAFLUX is executable
+if [[ ! -x $MEDIAFLUX ]]; then
+        chmod +x $MEDIAFLUX
+        if [[ $? -eq 1 ]]; then
+                echo "Error: $MEDIAFLUX is not executable. run \"sudo chmod +x $MFCOMMAND\" to fix it."
+                exit 1
+        fi
+fi
+
+# comment the line: . /etc/mediaflux
+sed -e '/^\.\ \/etc\/mediaflux/ s/^/#/' -i $MEDIAFLUX
+
+
+# check if java exists
+if [[ ! -z $JAVA_HOME ]]; then
+        export PATH=$JAVA_HOME/bin:$PATH
+fi
+if [[ -z `which java` ]]; then
+        echo "Error: could not find java."
+        exit 1
+fi
+
+# check if java version is equal to or greater than 1.5
+JAVA_VERSION=`java -version 2>&1 | grep "java version" | awk '{print $3}' | tr -d \" | awk '{split($0, array, ".")} END{print array[2]}'`
+if [[ $JAVA_VERSION -lt 5 ]]; then
+        echo "Error: java version is lower than 1.5."
+        exit 1
+fi
+
+# check if $MFLUX_HOME is set
+if [[ -z $MFLUX_HOME ]]; then
+        echo "Error: MFLUX_HOME is not set."
+        exit 1
+fi
+
+# check if $MFLUX_HOST is set
+if [[ -z $MFLUX_HOST ]]; then
+        echo "Error: MFLUX_HOST is not set."
+        exit 1
+fi
+
+# check if $MFLUX_PORT is set
+if [[ -z $MFLUX_PORT ]]; then
+        echo 1>&2 "Error: MFLUX_PORT is not set."
+        exit 1
+fi
+
+# check if $MFLUX_TRANSPORT is set
+if [[ -z $MFLUX_TRANSPORT ]]; then
+        echo 1>&2 "Error: MFLUX_TRANSPORT is not set."
+        exit 1
+fi
+
+# check if $MFLUX_DOMAIN is set
+if [[ -z $MFLUX_DOMAIN ]]; then
+        echo 1>&2 "Error: MFLUX_DOMAIN is not set."
+        exit 1
+fi
+
+# check if $MFLUX_USER is set
+if [[ -z $MFLUX_USER ]]; then
+        echo 1>&2 "Error: MFLUX_USER is not set."
+        exit 1
+fi
+
+# check if $MFLUX_PASSWORD is set
+if [[ -z $MFLUX_PASSWORD ]]; then
+	if [[ ! -z $MFLUX_PASSWORD_ENC ]]; then
+		MFLUX_PASSWORD=`echo $MFLUX_PASSWORD_ENC | openssl enc -d -base64`
+	else
+	        echo 1>&2 "Error: MFLUX_PASSWORD is not set."
+        	exit 1
+	fi
+fi
+
+# check if $MFLUX_UMASK is set. if not, defaults to 00
+if [[ -z $MFLUX_UMASK ]]; then
+	MFLUX_UMASK=0007
+fi
+
+if [[ $EUID -eq 0 && ! -z $MFLUX_OS_USER ]]; then
+        su -l $MFLUX_OS_USER -c "umask $MFLUX_UMASK; export MFLUX_PASSWORD=$MFLUX_PASSWORD; $MEDIAFLUX $@"
+else
+        umask $MFLUX_UMASK; export MFLUX_PASSWORD=$MFLUX_PASSWORD; $MEDIAFLUX $@
+fi
+
+

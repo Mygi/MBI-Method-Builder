@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="mfc-pvupload/src"/>
+	<classpathentry kind="src" path="mfp-pssd/src"/>
+	<classpathentry kind="src" path="mfp-essentials/src"/>
+	<classpathentry kind="src" path="mfp-transcode/src"/>
+	<classpathentry kind="src" path="dcmtools/src"/>
+	<classpathentry kind="src" path="commons/src"/>
+	<classpathentry kind="src" path="mfp-nig-pssd/src"/>
+	<classpathentry kind="src" path="mfc-server-config/src"/>
+	<classpathentry kind="src" path="mfc-integration-test/src"/>
+	<classpathentry kind="src" path="mfc-dicom-client/src"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
+	<classpathentry kind="lib" path="_lib_/pixelmed/pixelmed.jar"/>
+	<classpathentry kind="lib" path="_lib_/mflux/aplugin.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="file:/D:/Develop/mflux/dev/plugin/docs/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="_lib_/mflux/mfclient.jar"/>
+	<classpathentry kind="lib" path="_lib_/apache-commons/commons-compress-1.0.jar"/>
+	<classpathentry kind="lib" path="_lib_/loni-debabeler.jar"/>
+	<classpathentry kind="lib" path="_lib_/saxon-he-9.3.0.5.jar"/>
+	<classpathentry kind="lib" path="_lib_/apache-commons/commons-io-2.1.jar"/>
+	<classpathentry kind="lib" path="_lib_/nig-commons.jar"/>
+	<classpathentry kind="output" path="bin"/>
+</classpath>

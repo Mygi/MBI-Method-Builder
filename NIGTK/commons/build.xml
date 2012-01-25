@@ -1,0 +1,122 @@
+<project name="nig-commons" default="propogate" basedir=".">
+	<description>Build NIG commons library.</description>
+
+	<!--load properties from file-->
+	<property file="build.properties" />
+
+	<!--load build.number from file-->
+	<!--
+	<buildnumber file="build.number" />
+	-->
+
+	<!--set locations-->
+	<property name="src" location="./src" />
+	<property name="lib" location="../_lib_" />
+	<patternset id="lib.jars">
+		<include name="apache-commons/commons-compress*.jar" />
+		<include name="apache-commons/commons-io*.jar" />
+	</patternset>
+	<patternset id="lib.jars.mflux">
+		<include name="mflux/aplugin.jar" />
+		<include name="mflux/mfclient.jar" />
+	</patternset>
+	
+	
+	<property name="build" location="${build.base}/${app.name}" />
+	<property name="dist" location="${dist.base}/${app.name}" />
+	<property name="lib-jar" value="${app.name}.jar" />
+	<property name="lib-zip" value="${app.name}-${app.version}-${build.number}.zip" />
+
+	<!-- -->
+	<!--Target: init-->
+	<!-- -->
+	<target name="init">
+		<!-- Create the time stamp -->
+		<tstamp>
+			<format property="build_time" pattern="dd-MMM-yyyy kk:mm:ss z" />
+		</tstamp>
+
+		<!-- Create the build directory structure used by compile -->
+		<mkdir dir="${build}" />
+		<mkdir dir="${dist}" />
+	</target>
+
+	<!-- -->
+	<!--Target: clean-->
+	<!-- -->
+	<target name="clean">
+		<delete>
+			<fileset dir="${build}" includes="**/*" />
+			<fileset dir="${dist}" includes="**/*" />
+		</delete>
+	</target>
+	
+	<!-- -->
+	<!-- Target: unjar-libs -->
+	<!-- -->
+	<target name="unjar-libs">
+	<!-- unpack the required the libs to build directory. -->
+	<unjar dest="${build}">
+		<patternset>
+			<exclude name="META-INF/LICENSE.txt" />
+			<exclude name="META-INF/NOTICE.txt" />
+			<exclude name="META-INF/maven/**" />
+		</patternset>
+		<fileset dir="${lib}">
+			<patternset refid="lib.jars" />
+		</fileset>
+	</unjar>
+	</target>
+	<!-- -->
+	<!--Target: compile-->
+	<!-- -->
+	<target name="compile" depends="init,clean,unjar-libs" description="Compile the java source">
+		<!-- Compile the java code from ${src} into ${build} -->
+		<javac debug="on" debuglevel="lines,vars,source" srcdir="${src}" destdir="${build}">
+			<classpath>
+				<fileset dir="${lib}">
+					<patternset refid="lib.jars" />
+					<patternset refid="lib.jars.mflux" />
+				</fileset>
+			</classpath>
+		</javac>
+	</target>
+
+	<!-- -->
+	<!--Target: jar-->
+	<!-- -->
+	<target name="jar" depends="compile" description="create the library jar file.">
+		<!-- pack everything into a new jar file -->
+		<jar destfile="${dist}/${lib-jar}">
+			<manifest>
+				<attribute name="App-Version" value="${app.version}" />
+				<attribute name="Build-number" value="${build.number}" />
+				<attribute name="Build-Time" value="${build_time}" />
+			</manifest>
+			<fileset dir="${build}" includes="**/*" />
+		</jar>
+	</target>
+
+	<!-- -->
+	<!-- Target: deploy-->
+	<!-- -->
+	<target name="deploy" depends="jar" description="Deploy the lib jar file to _lib_ directory.">
+		<copy file="${dist}/${lib-jar}" todir="${lib}"/>
+	</target>
+	
+	<!-- -->
+	<!-- Target: propogate-->
+	<!-- -->
+	<target name="propogate" depends="deploy" description="Triggers re-building of dependent packages.">
+		<!-- re-build the dependent packages -->
+		<ant dir="../dcmtools" inheritAll="false"/>
+		<ant dir="../mfc-pvupload" inheritAll="false"/>
+		<ant dir="../mfc-dicom-client" inheritAll="false"/>
+		<ant dir="../mfp-transcode" inheritAll="false"/>
+		<ant dir="../mfp-essentials" inheritAll="false"/>
+		<ant dir="../mfp-pssd" inheritAll="false"/>
+		<ant dir="../mfp-nig-pssd" inheritAll="false"/>
+	</target>
+
+
+</project>

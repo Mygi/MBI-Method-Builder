@@ -1,0 +1,17 @@
+#!/bin/bash
+
+# check if MF_EXEC script exists
+MF_EXEC="`dirname $0`/mf_exec"
+
+if [[ -z $MF_EXEC ]]; then
+        echo "Error: could not locate $MF_EXEC."
+        exit 1
+fi
+
+
+# 
+DOMAIN=nig
+
+# list users
+$MF_EXEC user.list :domain $DOMAIN
+

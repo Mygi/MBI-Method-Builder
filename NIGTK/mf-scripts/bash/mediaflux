@@ -1,0 +1,219 @@
+#!/bin/bash
+# file name mediaflux
+
+# @modified by Wilson 28/6/2011
+
+# chkconfig: 2345 90 05
+# description: Mediaflux server daemon
+
+# Novel/SuSE init.d parameters:
+ 
+### BEGIN INIT INFO
+# Provides:       mediaflux
+# Required-Start: network
+# Should-Start:  dmf
+# Required-Stop:  network
+# Default-Start:  2 3 5
+# Default-Stop: 0 1 6
+# Description:    Start Mediaflux
+### END INIT INFO
+
+
+# On Unix platforms, this file can be copied into /etc/init.d 
+#
+# If the operating system supports 'chkconfig' (e.g. Linux) then
+# after copying into /etc/init.d, Mediaflux can be added as a
+# service, using 'chkconfig --add mediaflux' and the service controlled
+# using the 'service' command:
+#
+#  > service mediaflux [start,stop,status,restart]
+
+# Check if java is available and check if java version is 1.5+
+#
+
+# check if java exists
+if [[ ! -z $JAVA_HOME ]]; then
+        export PATH=$JAVA_HOME/bin:$PATH
+fi
+if [[ -z `which java` ]]; then
+        echo "Error: could not find java."
+        exit 1
+fi
+
+# check if java version is equal to or greater than 1.5
+JAVA_VERSION=`java -version 2>&1 | grep "java version" | awk '{print $3}' | tr -d \" | awk '{split($0, array, ".")} END{print array[2]}'`
+if [[ $JAVA_VERSION -lt 5 ]]; then
+        echo "Error: java version is lower than 1.5."
+        exit 1
+fi
+
+
+# The following variables should be configured and are site specific. They
+# can be configured inside this script or be placed in a separate script.
+#
+#   MFLUX_HOME       - location of the Mediaflux installation
+#   MFLUX_DOMAIN     - the logon domain for this script
+#   MFLUX_USER       - the logon user for this script
+#   MFLUX_PASSWORD   - the logon password for this script
+#   MFLUX_TRANSPORT  - the network transport type. One of: [http,tcpip]
+#   MFLUX_PORT       - the network connection port
+ 
+# The following variables are optional. (added by Wilson Liu)
+#
+#   MFLUX_OS_USER    - the system account that the Mediaflux server is run as. Useful when it is installed as startup script and you do not want run it as root user for security reasons. 
+#   MFLUX_UMASK      - the umask settings for Mediaflux server process. Useful when the server create new files/directories (e.g. in a local file system sink.)
+
+# check if $MFLUX_HOME is set
+if [[ -z $MFLUX_HOME ]]; then
+        echo "Error: MFLUX_HOME is not set."
+        exit 1
+fi
+
+# check if $MFLUX_HOST is set
+if [[ -z $MFLUX_HOST ]]; then
+        echo "Error: MFLUX_HOST is not set."
+        exit 1
+fi
+
+# check if $MFLUX_PORT is set
+if [[ -z $MFLUX_PORT ]]; then
+        echo 1>&2 "Error: MFLUX_PORT is not set."
+        exit 1
+fi
+
+# check if $MFLUX_TRANSPORT is set
+if [[ -z $MFLUX_TRANSPORT ]]; then
+        echo 1>&2 "Error: MFLUX_TRANSPORT is not set."
+        exit 1
+fi
+
+# check if $MFLUX_DOMAIN is set
+if [[ -z $MFLUX_DOMAIN ]]; then
+        echo 1>&2 "Error: MFLUX_DOMAIN is not set."
+        exit 1
+fi
+
+# check if $MFLUX_USER is set
+if [[ -z $MFLUX_USER ]]; then
+        echo 1>&2 "Error: MFLUX_USER is not set."
+        exit 1
+fi
+
+# check if $MFLUX_PASSWORD is set
+if [[ -z $MFLUX_PASSWORD ]]; then
+	if [[ ! -z $MFLUX_PASSWORD_ENC ]]; then
+		MFLUX_PASSWORD=`echo $MFLUX_PASSWORD_ENC | openssl enc -d -base64`
+	else
+        	echo 1>&2 "Error: MFLUX_PASSWORD is not set."
+        	exit 1
+	fi
+fi
+
+# check if $MFLUX_UMASK is set. if not, defaults to 00
+if [[ -z $MFLUX_UMASK ]]; then
+	MFLUX_UMASK=0007
+fi
+
+#. /etc/mediaflux
+
+# Test if our configuration is valid
+test -s ${MFLUX_HOME}/bin/aserver.jar || {
+  echo 1>&2 "${MFLUX_HOME} is not a valid location of the Mediaflux installation" 
+  echo 1>&2 "Check the configuration in /etc/sysconfig/mediaflux" 
+  if test "$1" == "stop" ; then exit 0 ; else exit 6 ; fi
+}
+
+
+
+# PROG is used by this script to identify the name of the application
+# Used for informational purposes only.
+
+PROG=Mediaflux
+
+
+# User credentials required so the script can execute the following services:
+#
+#   server.terminate
+#   server.status
+#
+AUTHEN=$MFLUX_DOMAIN,$MFLUX_USER,$MFLUX_PASSWORD
+
+
+# Uncomment (or set) the following line (and set a preferred debug port) to
+# enable remote attachment to the server using a Java debugger.
+#
+# The server will not suspend on startup.
+#
+#DEBUG=debug.port=8000
+
+# Function: start
+#
+start() {
+    if [[ ! -z $MFLUX_OS_USER && $EUID -eq 0 ]]; then
+        echo "Starting $PROG($MFLUX_OS_USER). Check log files for status."
+        su -l $MFLUX_OS_USER -c "umask $MFLUX_UMASK; java -Djava.net.preferIPv4Stack=true -jar $MFLUX_HOME/bin/aserver.jar application.home=$MFLUX_HOME nogui $DEBUG >> $MFLUX_HOME/volatile/logs/unix_start.log&"
+    else
+        echo "Starting $PROG(`whoami`). Check log files for status."
+        java -Djava.net.preferIPv4Stack=true -jar $MFLUX_HOME/bin/aserver.jar application.home=$MFLUX_HOME nogui $DEBUG >> $MFLUX_HOME/volatile/logs/unix_start.log&  
+    fi
+    RETVAL=$?
+}
+
+# Function: stop
+#
+stop() {
+    echo "Stopping $PROG.."
+    if [[ ! -z $MFLUX_OS_USER && $EUID -eq 0 ]]; then
+        su -l $MFLUX_OS_USER -c "java -Djava.net.preferIPv4Stack=true -Dmf.transport=$MFLUX_TRANSPORT -Dmf.port=$MFLUX_PORT -jar $MFLUX_HOME/bin/aserver.jar authentication=$AUTHEN application.home=$MFLUX_HOME terminate"
+    else
+        java -Djava.net.preferIPv4Stack=true -Dmf.transport=$MFLUX_TRANSPORT -Dmf.port=$MFLUX_PORT -jar $MFLUX_HOME/bin/aserver.jar authentication=$AUTHEN application.home=$MFLUX_HOME terminate  
+    fi
+    RETVAL=$?
+}
+
+# Function: status
+#
+status() {
+    echo "Checking status of $PROG.."
+    if [[ ! -z $MFLUX_OS_USER && $EUID -eq 0 ]]; then
+        su -l $MFLUX_OS_USER -c "java -Djava.net.preferIPv4Stack=true -Dmf.transport=$MFLUX_TRANSPORT -Dmf.port=$MFLUX_PORT -jar $MFLUX_HOME/bin/aserver.jar authentication=$AUTHEN application.home=$MFLUX_HOME status"
+    else
+        java -Djava.net.preferIPv4Stack=true -Dmf.transport=$MFLUX_TRANSPORT -Dmf.port=$MFLUX_PORT -jar $MFLUX_HOME/bin/aserver.jar authentication=$AUTHEN application.home=$MFLUX_HOME status
+    fi
+    RETVAL=$?
+}
+
+# Options:
+#
+case "$1" in 
+  start) 
+    start 
+    ;;
+
+  stop)
+    stop
+    ;;
+
+  restart)
+    echo "Restarting $PROG.."
+    stop
+    start
+    ;;
+
+  force-reload)
+    echo "Force Reload: Restarting $PROG.."
+    stop
+    start
+    ;;
+
+  status)
+    status
+    RETVAL=$?
+    ;;
+
+  *)
+    echo $"Usage: $0 {start|stop|restart|force-reload|status}"
+    RETVAL=1
+esac
+
+exit $RETVAL

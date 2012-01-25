@@ -1,0 +1,103 @@
+#!/bin/bash
+
+# check if arguments (command) are specified
+if [[ $# -eq 0 ]]; then
+	echo "Error: no argument is specified."
+	echo ""
+	echo "Usage: `basename $0` < mf_service [:arg < value > | ...] >"
+	echo ""
+	exit 1
+fi
+
+# check if $MFLUX_HOME is set
+if [[ -z $MFLUX_HOME ]]; then
+	echo "Error: MFLUX_HOME is not set."
+	exit 1
+fi
+
+# check if $MFCOMMAND exists
+MFCOMMAND=$MFLUX_HOME/bin/unix/mfcommand
+if [[ ! -f $MFCOMMAND ]]; then
+	echo "Error: could not find $MFCOMMAND"
+	exit 1
+fi
+
+# check if $MFCOMMAND is executable
+if [[ ! -x $MFCOMMAND ]]; then
+	chmod +x $MFCOMMAND
+	if [[ $? -eq 1 ]]; then
+		echo "Error: $MFCOMMAND is not executable. run \"sudo chmod +x $MFCOMMAND\" to fix it."
+		exit 1
+	fi
+fi
+
+# add to PATH
+if [[ -z `which mfcommand 2>/dev/null` ]]; then
+	export PATH=$MFLUX_HOME/bin/unix:$PATH
+fi
+
+# check if java exists
+if [[ ! -z $JAVA_HOME ]]; then
+	export PATH=$JAVA_HOME/bin:$PATH
+fi
+if [[ -z `which java` ]]; then
+	echo "Error: could not find java."
+	exit 1
+fi
+
+# check if java version is equal to or greater than 1.5 
+JAVA_VERSION=`java -version 2>&1 | grep "java version" | awk '{print $3}' | tr -d \" | awk '{split($0, array, ".")} END{print array[2]}'`
+if [[ $JAVA_VERSION -lt 5 ]]; then
+	echo "Error: java version is lower than 1.5."
+	exit 1
+fi
+
+# check if $MFLUX_HOST is set. If not, assume localhost
+if [[ -z $MFLUX_HOST ]]; then
+	echo "Warning: MFLUX_HOST is not set. Using `hostname`."
+	export MFLUX_HOST=`hostname`
+fi
+
+# check if $MFLUX_PORT is set.
+if [[ -z $MFLUX_PORT ]]; then
+	echo "Error: MFLUX_PORT is not set."
+	exit 1
+fi
+
+# check if $MFLUX_TRANSPORT is set
+if [[ -z $MFLUX_TRANSPORT ]]; then
+	echo "Error: MFLUX_TRANSPORT is not set"
+	exit 1
+fi
+
+# check if $MFLUX_DOMAIN is set
+if [[ -z $MFLUX_DOMAIN ]]; then
+	read -p "MFLUX_DOMAIN: " MFLUX_DOMAIN
+fi
+
+# check if $MFLUX_USER is set
+if [[ -z $MFLUX_USER ]]; then
+	read -p "MFLUX_USER: " MFLUX_USER
+fi
+
+# check if $MFLUX_PASSWORD is set. If not, try $MFLUX_PASSWORD_ENC;
+if [[ -z $MFLUX_PASSWORD ]]; then
+	if [[ ! -z $MFLUX_PASSWORD_ENC ]]; then
+		MFLUX_PASSWORD=`echo $MFLUX_PASSWORD_ENC | openssl enc -d -base64`
+	else 
+		read -s -p "MFLUX_PASSWORD: " MFLUX_PASSWORD
+	fi
+fi
+
+echo ""
+
+# echo "($MFLUX_DOMAIN:$MFLUX_USER): Logging on $MFLUX_HOST..."
+
+$MFCOMMAND logon $MFLUX_DOMAIN $MFLUX_USER $MFLUX_PASSWORD
+
+$MFCOMMAND $@
+
+# echo "($MFLUX_DOMAIN:$MFLUX_USER): Logging off $MFLUX_HOST..."
+$MFCOMMAND logoff
+
+
