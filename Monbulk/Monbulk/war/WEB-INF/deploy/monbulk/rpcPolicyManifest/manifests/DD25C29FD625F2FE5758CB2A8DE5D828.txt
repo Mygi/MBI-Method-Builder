@@ -1,0 +1,2 @@
+serviceClass: edu.versi.Monbulk.client.GreetingService
+path: B6A3AA0AFCDEAB4D47AC683B34B66477.gwt.rpc
